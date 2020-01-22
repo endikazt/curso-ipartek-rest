@@ -6,25 +6,39 @@ import org.hibernate.validator.constraints.NotBlank;
 
 public class Usuario {
 	
-	private int id;
+private int id;
 	
 	@NotBlank
-	@Size( min = 2, max = 50)
+	@Size(min = 2, max = 50)
 	private String nombre;
 	
 	@NotBlank
-	@Size( min = 2, max = 50)
-	private String contrasenia;
-		
+	@Size(min = 2, max = 50)
+	private String password;
+	
 	private Rol rol;
-
+	
+	public Usuario(int id, String nombre, String password) {
+		super();
+		this.id = id;
+		this.nombre = nombre;
+		this.password = password;
+		this.rol = new Rol();
+	}
+	
 	public Usuario() {
 		super();
 		this.id = 0;
 		this.nombre = "";
-		this.contrasenia = "";
+		this.password = "";
 		this.rol = new Rol();
 	}
+	
+	public Usuario(String nombre, String password) {
+		this();
+		this.nombre = nombre;
+		this.password = password;
+	}	
 
 	public int getId() {
 		return id;
@@ -42,12 +56,12 @@ public class Usuario {
 		this.nombre = nombre;
 	}
 
-	public String getContrasenia() {
-		return contrasenia;
+	public String getPassword() {
+		return password;
 	}
 
-	public void setContrasenia(String contrasenia) {
-		this.contrasenia = contrasenia;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public Rol getRol() {
@@ -60,9 +74,8 @@ public class Usuario {
 
 	@Override
 	public String toString() {
-		return "Usuario [id=" + id + ", nombre=" + nombre + ", contrasenia=" + contrasenia + ", rol=" + rol + "]";
+		return "Usuario [id=" + id + ", nombre=" + nombre + ", password=" + password + ", rol=" + rol + "]";
 	}
-
 
 	
 }

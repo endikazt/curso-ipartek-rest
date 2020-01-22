@@ -1,7 +1,10 @@
 package com.ipartek.formacion.supermercado.modelo.dao;
 
 
+import java.util.ArrayList;
 import java.util.List;
+
+import com.ipartek.formacion.supermercado.modelo.pojo.Producto;
 
 
 public interface IDAO<P> {
@@ -17,8 +20,9 @@ public interface IDAO<P> {
 	 * recupera un pojo por su identificador
 	 * @param id identificador
 	 * @return pojo si lo encuentra, si no null
+	 * @throws Exception 
 	 */
-	P getById(int id);
+	P getById(int id) throws Exception;
 	
 	/**
 	 * Elimina
@@ -44,5 +48,7 @@ public interface IDAO<P> {
 	 * @throws Exception si no puede crear
 	 */
 	P create(P pojo)  throws Exception;
+
+	ArrayList<Producto> getAllByUser(int id) throws Exception;
 
 }

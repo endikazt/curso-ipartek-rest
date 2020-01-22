@@ -3,6 +3,7 @@ package com.ipartek.formacion.supermercado.controller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import javax.servlet.ServletConfig;
@@ -19,13 +20,14 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.ipartek.formacion.supermercado.modelo.dao.ProductoDAO;
 import com.ipartek.formacion.supermercado.modelo.pojo.Producto;
+import com.ipartek.formacion.supermercado.utils.Utilidades;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 
 /**
  * Servlet implementation class ProductoRestController
  */
-@WebServlet( { "/producto/*" } )
+@WebServlet( { "/producto/*"} )
 public class ProductoRestController extends HttpServlet {
 	
 	
@@ -38,7 +40,7 @@ public class ProductoRestController extends HttpServlet {
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
-		productoDao = ProductoDAO.getInstance();
+		productoDao = ProductoDAO.getIntance();
 	}
 
 	/**
@@ -89,13 +91,21 @@ public class ProductoRestController extends HttpServlet {
 				
 			try {
 				
-				int pathInfoData = Integer.parseInt(pathInfo.substring(1));
+				int pathInfoData = Utilidades.obtenerId(pathInfo);
+				
+				if(pathInfoData == -1) {
+					
+					// response status code
+					response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
+					out.print("Solo se permite un solo valor de producto. Ejemplo supermercado-rest/producto/1");
+					
+				} else {
 				
 				Producto producto = productoDao.getById(pathInfoData);
 				
 				if(producto == null) {
 					
-					response.setStatus( HttpServletResponse.SC_ACCEPTED);
+					response.setStatus( HttpServletResponse.SC_NOT_FOUND);
 					out.print("No existe ningun producto con ese ID :(");
 					
 				} else {
@@ -106,6 +116,7 @@ public class ProductoRestController extends HttpServlet {
 					out.flush(); 	
 					
 				}
+			}
 				
 			} catch (Exception e) {
 				LOG.info("El parametro pasado no es un numero. Error -> " + e);
@@ -199,7 +210,11 @@ public class ProductoRestController extends HttpServlet {
 				
 				int pathInfoData = Integer.parseInt(pathInfo.substring(1));
 				
+				LOG.debug("Este es el id del producto -> " + pathInfoData);
+				
 				Producto producto = productoDao.getById(pathInfoData);
+				
+				LOG.debug("Antes de comporbar si el producto es null");
 				
 				if(producto == null) {
 					
@@ -211,6 +226,8 @@ public class ProductoRestController extends HttpServlet {
 					try {
 						
 						producto = gson.fromJson(reader, Producto.class);
+						
+						productoDao.update(pathInfoData, producto);
 						
 						response.setStatus( HttpServletResponse.SC_CREATED);
 						
@@ -269,14 +286,15 @@ public class ProductoRestController extends HttpServlet {
 				
 				if(producto == null) {
 					
-					response.setStatus( HttpServletResponse.SC_ACCEPTED);
+					response.setStatus( HttpServletResponse.SC_NOT_FOUND);
 					out.print("No existe ningun producto con ese ID :(");
 					
 				} else {
 					
-					productoDao.delete(pathInfoData);
+					productoDao.deleteLogico(pathInfoData);
 					
 					response.setStatus( HttpServletResponse.SC_OK);
+					out.print("Producto " + pathInfoData + " eliminado correctamente :)");
 					
 				}
 				
