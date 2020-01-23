@@ -194,15 +194,10 @@ public class ProductoRestController extends HttpServlet {
 				responseBody = "Tienes que indicar el producto que quieres modificar. Ejemplo supermecado-rest/producto/1";
 				
 			} else {
-						
-					Producto producto = productoDao.getById(pathInfoData);
 					
-					if(producto == null) {
+					try {
 						
-						statusCode = HttpServletResponse.SC_ACCEPTED;
-						responseBody = "No existe ningun producto con ese ID :(";
-						
-					} else {
+						Producto producto = productoDao.getById(pathInfoData);	
 						
 						try {
 							
@@ -211,7 +206,8 @@ public class ProductoRestController extends HttpServlet {
 							productoDao.update(pathInfoData, producto);
 							
 							statusCode = HttpServletResponse.SC_CREATED;
-							responseBody = "Producto modificado correctamente. \n " + new Gson().toJson(producto).toString();					
+							responseBody = "Producto modificado correctamente. \n " + new Gson().toJson(producto).toString();	
+							
 							
 						} catch (Exception e) {
 							LOG.error(e);
@@ -220,10 +216,15 @@ public class ProductoRestController extends HttpServlet {
 							responseBody = "El formato de los datos es incorrecto.";
 							
 						}
-					}
 							
-					
-				}
+					} catch (Exception e) {
+						LOG.error(e);
+						
+						statusCode = HttpServletResponse.SC_ACCEPTED;
+						responseBody = "No existe ningun producto con ese ID :(";
+					}
+			}
+			
 			
 		}  catch (Exception e) {
 			LOG.info("El parametro pasado no es un numero. Error -> " + e);

@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class UtilidadesTest {
+	
+	/*
 
 	@Test
 	public void testObtenerId() throws Exception {
@@ -31,5 +33,29 @@ public class UtilidadesTest {
 		
 		
 	}
+	
+	*/
+	
+
+	@Test
+	public void contarPalabrasTest1() {
+		
+		assertEquals(0, Utilidades.contarPalabras(null));
+		assertEquals(0, Utilidades.contarPalabras(""));
+		assertEquals(0, Utilidades.contarPalabras("                 "));
+		assertEquals(2, Utilidades.contarPalabras("Hola mundo"));
+		assertEquals(2, Utilidades.contarPalabras("Hola               mundo"));
+		assertEquals(2, Utilidades.contarPalabras("        Hola           mundo         "));
+		assertEquals(2, Utilidades.contarPalabras("Hola, mundo"));
+		
+	}
+	
+	@Test
+	public void contarPalabrasTest2() {
+		
+		assertEquals(2, Utilidades.contarPalabras("Hola, mundo"));
+		assertEquals(2, Utilidades.contarPalabras("Hola...?mundo"));
+	}
+	
 
 }
