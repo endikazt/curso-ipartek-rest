@@ -20,7 +20,7 @@ public class Utilidades {
 					
 				} else {
 					
-					resul = Integer.parseInt(pathInfo.substring(1, pathInfo.length()));
+					resul = Integer.parseInt(pathInfo.substring(1));
 					
 				}
 				

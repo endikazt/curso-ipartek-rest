@@ -34,6 +34,10 @@ public class ProductoRestController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final static Logger LOG = Logger.getLogger(ProductoRestController.class);
 	private ProductoDAO productoDao;
+	private PrintWriter out;
+	private BufferedReader reader;
+	private String responseBody;
+	private int statusCode;
 	
 
 	/**
@@ -55,11 +59,17 @@ public class ProductoRestController extends HttpServlet {
 	 */
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+		out = response.getWriter();
+		
 		// prepara la response		
 		response.setContentType("application/json"); 
 		response.setCharacterEncoding("utf-8");
 		
 		super.service(request, response);   // llama a doGEt, doPost, doPut, doDelete
+		
+		response.setStatus(statusCode); 	// Escribe el codigo de estado en la respuesta
+		out.print(responseBody);			// Escribe el contenido en el cuerpo de la respuesta
+		out.flush();
 		
 	}
 
@@ -71,62 +81,42 @@ public class ProductoRestController extends HttpServlet {
 		LOG.trace("peticion GET");
 		
 		String pathInfo = request.getPathInfo();
-		PrintWriter out = response.getWriter();
-		String jsonResponseBody = "";
-		
+
 		LOG.debug("mirar pathInfo:" + pathInfo + " para saber si es listado o detalle" );
 		
-		if("/".equals(pathInfo)) {
+		try {
 			
-			//obtener productos de la BD
-			ArrayList<Producto> lista = (ArrayList<Producto>) productoDao.getAll();
+			int pathInfoData = Utilidades.obtenerId(pathInfo); 			// Comprueba si el id pasado es valido o no
 			
-			response.setStatus( HttpServletResponse.SC_OK);
-			
-			jsonResponseBody = new Gson().toJson(lista);	 // conversion de Java a Json	
-			out.print(jsonResponseBody.toString()); 		 // out se encarga de poder escribir datos en el body
-			out.flush();  								     // termina de escribir datos en response body	
-			
-		} else {
+			if(pathInfoData == -1) {									// Si el pathInfo es "/" el resultado del metodo es -1 entonces se le muestran todos los productos
 				
-			try {
+				ArrayList<Producto> lista = (ArrayList<Producto>) productoDao.getAll();
 				
-				int pathInfoData = Utilidades.obtenerId(pathInfo);
+				statusCode = HttpServletResponse.SC_OK;
 				
-				if(pathInfoData == -1) {
-					
-					// response status code
-					response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-					out.print("Solo se permite un solo valor de producto. Ejemplo supermercado-rest/producto/1");
-					
-				} else {
+				responseBody = new Gson().toJson(lista).toString();	 // conversion de Java a Json y escribir en la variable de body
 				
-				Producto producto = productoDao.getById(pathInfoData);
-				
-				if(producto == null) {
-					
-					response.setStatus( HttpServletResponse.SC_NOT_FOUND);
-					out.print("No existe ningun producto con ese ID :(");
-					
-				} else {
-					
-					response.setStatus( HttpServletResponse.SC_OK);
-					jsonResponseBody = new Gson().toJson(producto);	
-					out.print(jsonResponseBody.toString());
-					out.flush(); 	
-					
+			} else {
+									
+					try {
+						
+						Producto producto = productoDao.getById(pathInfoData);
+						statusCode = HttpServletResponse.SC_OK;
+						responseBody = new Gson().toJson(producto).toString();	
+							
+					} catch (Exception e) {
+
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
+						responseBody = "No existe ningun producto con el id " + pathInfoData + " :(";
+					}
 				}
-			}
-				
-			} catch (Exception e) {
-				LOG.info("El parametro pasado no es un numero. Error -> " + e);
-				
-				// response status code
-				response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-				out.print("Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1");
-				
-			}
+
+		} catch (Exception e) {
 			
+			LOG.info(e);
+			
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
 			
 		}
 		
@@ -139,49 +129,46 @@ public class ProductoRestController extends HttpServlet {
 		
 		LOG.debug("POST crear recurso");
 		
-		PrintWriter out = response.getWriter();
-		
-		// convertir json del request body a Objeto
-		BufferedReader reader = request.getReader();               
+		reader = request.getReader();               
 		Gson gson = new Gson();
 		
 		Producto producto;
 		try {
-			producto = gson.fromJson(reader, Producto.class);
+			producto = gson.fromJson(reader, Producto.class);					// Obtiene los datos del body y los conbierte en un obajeto de Producto
 			
 			try {
-				productoDao.create(producto);
+				Producto productoCreado = productoDao.create(producto);
 				
-				response.setStatus( HttpServletResponse.SC_CREATED);
-				out.print("Producto creado correctamente :)");
+				statusCode = HttpServletResponse.SC_CREATED;
+				responseBody = "Producto creado correctamente :) \n" + productoCreado.toString();
 				
 			} catch (MySQLIntegrityConstraintViolationException esql) {
 				
 				LOG.error("No se ha podido insertar el registro en la base de datos. Error -> " + esql);
 				
-				response.setStatus( HttpServletResponse.SC_CONFLICT);
-				out.print("No se ha podido crear el producto porque el ID o el Nombre ya existen en la base de datos.");
+				statusCode = HttpServletResponse.SC_CONFLICT;
+				responseBody = "No se ha podido crear el producto porque el ID o el Nombre ya existen en la base de datos.";
 				
 				
 			} catch (Exception e) {
 				LOG.error(e);
 				
-				response.setStatus( HttpServletResponse.SC_CONFLICT);
-				out.print("No se ha podido crear el producto por algun error de la base de datos.");
+				statusCode =  HttpServletResponse.SC_CONFLICT;
+				responseBody = "No se ha podido crear el producto por algun error de la base de datos.";
 			}
 			
 			
 		} catch (JsonSyntaxException e1) {
 			LOG.error(e1);
 
-			response.setStatus( HttpServletResponse.SC_CONFLICT);
-			out.print("El formato de los datos es incorrecto.");
+			statusCode = HttpServletResponse.SC_CONFLICT;
+			responseBody = "El formato de los datos es incorrecto.";
 			
 		} catch (JsonIOException e1) {
 			LOG.error(e1);
 			
-			response.setStatus( HttpServletResponse.SC_CONFLICT);
-			out.print("Tienes que enviar el tipo de datos correctos.");
+			statusCode = HttpServletResponse.SC_CONFLICT;
+			responseBody = "Tienes que enviar el tipo de datos correctos.";
 			
 		}
 	
@@ -194,69 +181,57 @@ public class ProductoRestController extends HttpServlet {
 		LOG.debug("PUT modificar recurso");
 		
 		String pathInfo = request.getPathInfo();
-		PrintWriter out = response.getWriter();
-		String jsonResponseBody = "";
-		BufferedReader reader = request.getReader();               
+		reader = request.getReader();               
 		Gson gson = new Gson();
 		
-		if("/".equals(pathInfo)) {
+		try {
 			
-			response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-			out.print("Tienes que indicar el producto que quieres modificar. Ejemplo supermecado-rest/producto/1");
+			int pathInfoData = Utilidades.obtenerId(pathInfo);
 			
-		} else {
+			if(pathInfoData == -1) {
 				
-			try {
+				statusCode =  HttpServletResponse.SC_BAD_REQUEST;
+				responseBody = "Tienes que indicar el producto que quieres modificar. Ejemplo supermecado-rest/producto/1";
 				
-				int pathInfoData = Integer.parseInt(pathInfo.substring(1));
-				
-				LOG.debug("Este es el id del producto -> " + pathInfoData);
-				
-				Producto producto = productoDao.getById(pathInfoData);
-				
-				LOG.debug("Antes de comporbar si el producto es null");
-				
-				if(producto == null) {
+			} else {
+						
+					Producto producto = productoDao.getById(pathInfoData);
 					
-					response.setStatus( HttpServletResponse.SC_ACCEPTED);
-					out.print("No existe ningun producto con ese ID :(");
-					
-				} else {
-					
-					try {
+					if(producto == null) {
 						
-						producto = gson.fromJson(reader, Producto.class);
+						statusCode = HttpServletResponse.SC_ACCEPTED;
+						responseBody = "No existe ningun producto con ese ID :(";
 						
-						productoDao.update(pathInfoData, producto);
+					} else {
 						
-						response.setStatus( HttpServletResponse.SC_CREATED);
-						
-						jsonResponseBody = new Gson().toJson(producto);	
-						out.print("Producto modificado correctamente.");
-						out.print(jsonResponseBody.toString());
-						out.flush(); 	
-					
-						
-					} catch (Exception e) {
-						LOG.error(e);
+						try {
+							
+							producto = gson.fromJson(reader, Producto.class);
+							
+							productoDao.update(pathInfoData, producto);
+							
+							statusCode = HttpServletResponse.SC_CREATED;
+							responseBody = "Producto modificado correctamente. \n " + new Gson().toJson(producto).toString();					
+							
+						} catch (Exception e) {
+							LOG.error(e);
 
-						response.setStatus( HttpServletResponse.SC_CONFLICT);
-						out.print("El formato de los datos es incorrecto.");
-						
+							statusCode = HttpServletResponse.SC_CONFLICT;
+							responseBody = "El formato de los datos es incorrecto.";
+							
+						}
 					}
+							
+					
 				}
-						
-				
-			} catch (Exception e) {
-				LOG.info("El parametro pasado no es un numero. Error -> " + e);
-				
-				// response status code
-				response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-				out.print("Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1");
-				
-			}	
 			
-		}
+		}  catch (Exception e) {
+			LOG.info("El parametro pasado no es un numero. Error -> " + e);
+			
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
+			
+		}	
 	}
 
 	/**
@@ -266,46 +241,47 @@ public class ProductoRestController extends HttpServlet {
 		LOG.debug("DELETE eliminar recurso");
 		
 		String pathInfo = request.getPathInfo();
-		PrintWriter out = response.getWriter();
-		String jsonResponseBody = "";
 		
-		LOG.debug("mirar pathInfo:" + pathInfo + " para saber si es listado o detalle" );
+		LOG.debug("mirar pathInfo:" + pathInfo + " para saber si es listado o detalle" );	
 		
-		if("/".equals(pathInfo)) {
+		try {
 			
-			response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-			out.print("Tienes que indicar el producto que quieres eliminar. Ejemplo supermecado-rest/producto/1");			     // termina de escribir datos en response body	
+			int pathInfoData = Utilidades.obtenerId(pathInfo);
 			
-		} else {
+			if(pathInfoData == -1) {
 				
-			try {
+				statusCode =  HttpServletResponse.SC_BAD_REQUEST;
+				responseBody = "Tienes que indicar el producto que quieres eliminar. Ejemplo supermecado-rest/producto/1";
 				
-				int pathInfoData = Integer.parseInt(pathInfo.substring(1));
-				
-				Producto producto = productoDao.getById(pathInfoData);
-				
-				if(producto == null) {
+			} else {
 					
-					response.setStatus( HttpServletResponse.SC_NOT_FOUND);
-					out.print("No existe ningun producto con ese ID :(");
+					try {
+						
+						Producto producto = productoDao.getById(pathInfoData);	
+						
+						productoDao.deleteLogico(pathInfoData);
+			
+						statusCode = HttpServletResponse.SC_OK;
+						responseBody = "Producto " + pathInfoData + " eliminado correctamente :)";
+						
+					} catch (MySQLIntegrityConstraintViolationException esql) {
+						
+						statusCode =  HttpServletResponse.SC_CONFLICT;
+						responseBody = "El producto no se puede eliminar porque esta vinculado con otros datos de la base de datos. Errror -> " + esql;					
 					
-				} else {
-					
-					productoDao.deleteLogico(pathInfoData);
-					
-					response.setStatus( HttpServletResponse.SC_OK);
-					out.print("Producto " + pathInfoData + " eliminado correctamente :)");
-					
-				}
-				
-			} catch (Exception e) {
-				LOG.info("El parametro pasado no es un numero. Error -> " + e);
-				
-				// response status code
-				response.setStatus( HttpServletResponse.SC_BAD_REQUEST);
-				out.print("Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1");
+					} catch (Exception e) {
+						
+						statusCode =  HttpServletResponse.SC_NOT_FOUND;
+						responseBody = "No existe ningun producto con ese ID :(";
+					}			
 				
 			}
+				
+		} catch (Exception e) {
+			LOG.info(e);
+			
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
 			
 		}
 	}
