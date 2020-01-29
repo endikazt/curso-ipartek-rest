@@ -65,6 +65,12 @@ public class ProductoRestController extends HttpServlet {
 		response.setContentType("application/json"); 
 		response.setCharacterEncoding("utf-8");
 		
+		//TODO FILTRO
+		
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		response.addHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+		response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+		
 		super.service(request, response);   // llama a doGEt, doPost, doPut, doDelete
 		
 		response.setStatus(statusCode); 	// Escribe el codigo de estado en la respuesta
@@ -78,32 +84,46 @@ public class ProductoRestController extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		String pOrder = request.getParameter("_order");
+		String pColumna = request.getParameter("columna");
+		
 		LOG.trace("peticion GET");
 		
 		String pathInfo = request.getPathInfo();
 
 		LOG.debug("mirar pathInfo:" + pathInfo + " para saber si es listado o detalle" );
 		
-		try {
-			
-			int pathInfoData = Utilidades.obtenerId(pathInfo); 			// Comprueba si el id pasado es valido o no
-			
-			if(pathInfoData == -1) {									// Si el pathInfo es "/" el resultado del metodo es -1 entonces se le muestran todos los productos
+			try {
+
+				int pathInfoData = Utilidades.obtenerId(pathInfo); // Comprueba si el id pasado es valido o no
 				
-				ArrayList<Producto> lista = (ArrayList<Producto>) productoDao.getAll();
-				
-				statusCode = HttpServletResponse.SC_OK;
-				
-				responseBody = new Gson().toJson(lista).toString();	 // conversion de Java a Json y escribir en la variable de body
-				
-			} else {
-									
-					try {
+				ArrayList<Producto> lista;
+
+				if (pathInfoData == -1) { // Si el pathInfo es "/" el resultado del metodo es -1 entonces se le muestran todos los productos
+					
+					
+					if (("".equals(pOrder) || pOrder == null ) && ("".equals(pColumna) || pColumna == null )) {
+
+						lista = (ArrayList<Producto>) productoDao.getAll();
 						
+					} else {
+						
+						lista = (ArrayList<Producto>) productoDao.getAllOrderBy(pColumna, pOrder);
+						
+					}
+
+					statusCode = HttpServletResponse.SC_OK;
+
+					responseBody = new Gson().toJson(lista).toString(); // conversion de Java a Json y escribir en la variable de body
+
+				} else {
+
+					try {
+
 						Producto producto = productoDao.getById(pathInfoData);
 						statusCode = HttpServletResponse.SC_OK;
-						responseBody = new Gson().toJson(producto).toString();	
-							
+						responseBody = new Gson().toJson(producto).toString();
+
 					} catch (Exception e) {
 
 						statusCode = HttpServletResponse.SC_NOT_FOUND;
@@ -111,14 +131,14 @@ public class ProductoRestController extends HttpServlet {
 					}
 				}
 
-		} catch (Exception e) {
-			
-			LOG.info(e);
-			
-			statusCode = HttpServletResponse.SC_BAD_REQUEST;
-			responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
-			
-		}
+			} catch (Exception e) {
+
+				LOG.info(e);
+
+				statusCode = HttpServletResponse.SC_BAD_REQUEST;
+				responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
+
+			} 
 		
 	}
 

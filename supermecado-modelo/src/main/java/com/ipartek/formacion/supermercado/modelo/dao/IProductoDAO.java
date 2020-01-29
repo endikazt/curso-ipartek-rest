@@ -54,5 +54,7 @@ public interface IProductoDAO extends IDAO<Producto> {
 	ArrayList<Producto> getAllByCategoriaAndSearchParam(int id, String searchParam);
 
 	Producto deleteLogico(int id) throws Exception;
+
+	ArrayList<Producto> getAllOrderBy(String columna, String order);
 	
 }

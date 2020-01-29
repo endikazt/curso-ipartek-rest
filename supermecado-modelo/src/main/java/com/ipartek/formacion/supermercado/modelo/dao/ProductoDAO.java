@@ -12,6 +12,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.ipartek.formacion.supermercado.modelo.ConnectionManager;
+import com.ipartek.formacion.supermercado.modelo.pojo.Categoria;
 import com.ipartek.formacion.supermercado.modelo.pojo.Producto;
 import com.ipartek.formacion.supermercado.modelo.pojo.Usuario;
 
@@ -72,6 +73,42 @@ private static ProductoDAO INSTANCE = null;
 			LOG.error(e);
 		} catch (NumberFormatException e) {
 			LOG.error(e);
+		} catch (Exception e) {
+			LOG.error(e);
+		}
+
+		return lista;
+	}
+	
+	@Override
+	public ArrayList<Producto> getAllOrderBy(String columna, String order) {
+		
+		LOG.trace("Recuperar todos los productos de la base de datos por orden de la columna " + columna + " y de forma " + order);
+		
+		ArrayList<Producto> lista = new ArrayList<Producto>();
+
+		try (Connection con = ConnectionManager.getConnection();
+				
+			CallableStatement cs = con.prepareCall("{CALL pa_producto_getallorderby(?,?)}");
+				
+			){
+			
+			cs.setString(1, columna);
+			cs.setString(2, order);
+			
+			LOG.debug(cs);
+				
+			try (ResultSet rs = cs.executeQuery();) {
+				
+				while (rs.next()) {
+					
+					Producto c = mapper(rs);
+					lista.add(c);
+
+				}
+				
+			}
+
 		} catch (Exception e) {
 			LOG.error(e);
 		}
