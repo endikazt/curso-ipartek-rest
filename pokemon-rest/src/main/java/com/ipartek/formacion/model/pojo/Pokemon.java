@@ -32,6 +32,14 @@ public class Pokemon {
 		this.nombre = nombre;
 	}
 
+	public List<Habilidad> getHabilidades() {
+		return habilidades;
+	}
+
+	public void setHabilidades(List<Habilidad> habilidades) {
+		this.habilidades = habilidades;
+	}
+
 	@Override
 	public String toString() {
 		return "Pokemon [id=" + id + ", nombre=" + nombre + "]";
