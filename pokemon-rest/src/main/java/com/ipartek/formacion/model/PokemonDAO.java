@@ -188,6 +188,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 		
 		p.setId(rs.getInt("id_pokemon"));
 		p.setNombre(rs.getString("pokemon"));
+		p.setImagen(rs.getString("imagen"));
 		
 		h.setId(rs.getInt("id_habilidad"));
 		h.setNombre(rs.getString("nombre_habilidad"));

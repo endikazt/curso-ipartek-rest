@@ -7,6 +7,7 @@ public class Pokemon {
 	
 	private int id;
 	private String nombre;
+	private String imagen;
 	private List<Habilidad> habilidades;
 	
 	public Pokemon() {
@@ -30,6 +31,15 @@ public class Pokemon {
 
 	public void setNombre(String nombre) {
 		this.nombre = nombre;
+	}
+	
+
+	public String getImagen() {
+		return imagen;
+	}
+
+	public void setImagen(String imagen) {
+		this.imagen = imagen;
 	}
 
 	public List<Habilidad> getHabilidades() {
