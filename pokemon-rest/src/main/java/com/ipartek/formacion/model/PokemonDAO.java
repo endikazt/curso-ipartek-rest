@@ -2,19 +2,16 @@ package com.ipartek.formacion.model;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.ipartek.formacion.model.pojo.Habilidad;
 import com.ipartek.formacion.model.pojo.Pokemon;
-import com.mysql.fabric.xmlrpc.base.Array;
 
 public class PokemonDAO implements IDAO<Pokemon>{
 	
@@ -165,21 +162,106 @@ public class PokemonDAO implements IDAO<Pokemon>{
 
 	@Override
 	public Pokemon delete(int id) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		LOG.trace("Eliminar la pokemon " + id);
+		
+		Pokemon resul = this.getById(id);
+		
+		try (
+				
+			Connection con = ConnectionManager.getConnection();
+			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_delete(?)}");
+				
+		) {
+
+			cs.setInt(1, id);
+			
+			int affetedRows = cs.executeUpdate();
+			if (affetedRows == 1) {
+				
+				LOG.info("Eliminacion completada. Pokemon = " + resul.toString());
+				
+			} else {
+				
+				throw new Exception("No se ha podido eliminar el registro. El pokemon ni existe,");
+				
+			}
+
+		}
+		
+		return resul;
 	}
 
 	@Override
 	public Pokemon update(int id, Pokemon pojo) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		Pokemon resul = null;
+		
+		LOG.trace("Modificar pokemon " + id + ". Datos a modificar -> " + pojo);
+		
+		try (
+				
+			Connection con = ConnectionManager.getConnection();
+			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_update(?, ?, ?)}");		
+				
+		) {
+			
+			cs.setInt(3, id);
+			cs.setString(1, pojo.getNombre());
+			cs.setString(2, pojo.getImagen());
+
+			int affectedRows = cs.executeUpdate();
+			if (affectedRows == 1) {
+				
+				resul = this.getById(id);
+				
+				LOG.trace("Pokemon " + id + " modificada. Datos del pokemon -> " + resul);
+				
+			} else {
+				
+				throw new Exception("No se encontro registro para id=" + id);
+				
+			}
+		}
+		
+		return resul;
 	}
 
 	@Override
 	public Pokemon create(Pokemon pojo) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
+		Pokemon resul = null;
+		
+		LOG.trace("Crear nuevo pokemon -> " + pojo);
+		
+		try (
+				
+			Connection con = ConnectionManager.getConnection();
+			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_create(?,?,?)}");
+					
+		) {
+			
+			//Parametro de entrada
+
+			cs.setString(1, pojo.getNombre());
+			cs.setString(2, pojo.getImagen());
+			
+			//Parametro de salida
+			
+			cs.registerOutParameter(3, java.sql.Types.INTEGER);
+			
+			LOG.debug(cs);
+			
+			cs.executeUpdate();
+			
+			// Una cez ejecutado recogemo el paraemtro de salida
+			
+			resul = pojo;
+			
+			resul.setId(cs.getInt(3));
+			
+			LOG.trace("Pokemon creada -> " + resul);
+
+		}
+
+		return resul;	}
 	
 	private Pokemon mapper(ResultSet rs) throws SQLException {
 		

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,9 +16,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import com.ipartek.formacion.model.PokemonDAO;
 import com.ipartek.formacion.model.pojo.Pokemon;
 import com.ipartek.formacion.utils.Utilidades;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 /**
  * Servlet implementation class PokemonController
@@ -143,22 +147,160 @@ public class PokemonController extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+		LOG.debug("POST crear recurso");
+		
+		reader = request.getReader();               
+		Gson gson = new Gson();
+		
+		Pokemon pokemon;
+		try {
+			pokemon = gson.fromJson(reader, Pokemon.class);					// Obtiene los datos del body y los conbierte en un obajeto de Producto
+			
+			try {
+				Pokemon pokemonCreado = dao.create(pokemon);
+				
+				statusCode = HttpServletResponse.SC_CREATED;
+				
+			} catch (MySQLIntegrityConstraintViolationException esql) {
+				
+				LOG.error("No se ha podido insertar el registro en la base de datos. Error -> " + esql);
+				
+				statusCode = HttpServletResponse.SC_CONFLICT;
+				responseBody = "No se ha podido crear el pokemon porque el ID o el Nombre ya existen en la base de datos.";
+				
+				
+			} catch (Exception e) {
+				LOG.error(e);
+				
+				statusCode =  HttpServletResponse.SC_CONFLICT;
+				responseBody = "No se ha podido crear el pokemon por algun error de la base de datos.";
+			}
+			
+			
+		} catch (JsonSyntaxException e1) {
+			LOG.error(e1);
+
+			statusCode = HttpServletResponse.SC_CONFLICT;
+			responseBody = "El formato de los datos es incorrecto.";
+			
+		} catch (JsonIOException e1) {
+			LOG.error(e1);
+			
+			statusCode = HttpServletResponse.SC_CONFLICT;
+			responseBody = "Tienes que enviar el tipo de datos correctos.";
+			
+		}
 	}
 
 	/**
 	 * @see HttpServlet#doPut(HttpServletRequest, HttpServletResponse)
 	 */
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
+		LOG.debug("PUT modificar recurso");
+		
+		String pathInfo = request.getPathInfo();
+		reader = request.getReader();               
+		Gson gson = new Gson();
+		
+		try {
+			
+			int pathInfoData = Utilidades.obtenerId(pathInfo);
+			
+			if(pathInfoData == -1) {
+				
+				statusCode =  HttpServletResponse.SC_BAD_REQUEST;
+				responseBody = "Tienes que indicar el producto que quieres modificar. Ejemplo supermecado-rest/producto/1";
+				
+			} else {
+					
+					try {
+						
+						Pokemon pokemon = dao.getById(pathInfoData);	
+						
+						try {
+							
+							pokemon = gson.fromJson(reader, Pokemon.class);
+							
+							dao.update(pathInfoData, pokemon);
+							
+							statusCode = HttpServletResponse.SC_CREATED;
+							responseBody = "Pokemon modificado correctamente. \n " + new Gson().toJson(pokemon).toString();	
+							
+							
+						} catch (Exception e) {
+							LOG.error(e);
+
+							statusCode = HttpServletResponse.SC_CONFLICT;
+							responseBody = "El formato de los datos es incorrecto.";
+							
+						}
+							
+					} catch (Exception e) {
+						LOG.error(e);
+						
+						statusCode = HttpServletResponse.SC_ACCEPTED;
+						responseBody = "No existe ningun pokemon con ese ID :(";
+					}
+			}
+			
+			
+		}  catch (Exception e) {
+			LOG.info("El parametro pasado no es un numero. Error -> " + e);
+			
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			responseBody = "Tienes que enviar el tipo de datos correctos.";
+			
+		}	
 	}
 
 	/**
 	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
 	 */
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
+		LOG.debug("DELETE eliminar recurso");
+		
+		String pathInfo = request.getPathInfo();
+		
+		LOG.debug("mirar pathInfo:" + pathInfo + " para saber si es listado o detalle" );	
+		
+		try {
+			
+			int pathInfoData = Utilidades.obtenerId(pathInfo);
+			
+			if(pathInfoData == -1) {
+				
+				statusCode =  HttpServletResponse.SC_BAD_REQUEST;
+				responseBody = "Tienes que indicar el pokemon que quieres eliminar.";
+				
+			} else {
+					
+					try {
+						
+						Pokemon pokemon = dao.getById(pathInfoData);	
+						
+						dao.delete(pathInfoData);
+			
+						statusCode = HttpServletResponse.SC_OK;
+						
+					} catch (MySQLIntegrityConstraintViolationException esql) {
+						
+						statusCode =  HttpServletResponse.SC_CONFLICT;
+						responseBody = "El pokemon no se puede eliminar porque esta vinculado con otros datos de la base de datos. Error -> " + esql;					
+					
+					} catch (Exception e) {
+						
+						statusCode =  HttpServletResponse.SC_NOT_FOUND;
+					}			
+				
+			}
+				
+		} catch (Exception e) {
+			LOG.info(e);
+			
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			responseBody = "Tienes que enviar el tipo de datos correctos.";
+			
+		}
 	}
 
 }
