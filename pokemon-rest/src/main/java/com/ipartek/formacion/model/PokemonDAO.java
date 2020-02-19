@@ -2,8 +2,10 @@ package com.ipartek.formacion.model;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -204,9 +206,9 @@ public class PokemonDAO implements IDAO<Pokemon>{
 				
 		) {
 			
-			cs.setInt(3, id);
 			cs.setString(1, pojo.getNombre());
 			cs.setString(2, pojo.getImagen());
+			cs.setInt(3, id);
 
 			int affectedRows = cs.executeUpdate();
 			if (affectedRows == 1) {
@@ -229,17 +231,17 @@ public class PokemonDAO implements IDAO<Pokemon>{
 	public Pokemon create(Pokemon pojo) throws Exception {
 		Pokemon resul = null;
 		
+		String sqlInsertHabilidad = "INSERT INTO po_ha (id_pokemon,id_habilidad) VALUES (?,?);";
+		
 		LOG.trace("Crear nuevo pokemon -> " + pojo);
 		
-		try (
-				
-			Connection con = ConnectionManager.getConnection();
-			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_create(?,?,?)}");
-					
-		) {
+		Connection con = null;
+		try {
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
 			
-			//Parametro de entrada
-
+			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_create(?,?,?)}");
+			
 			cs.setString(1, pojo.getNombre());
 			cs.setString(2, pojo.getImagen());
 			
@@ -251,17 +253,48 @@ public class PokemonDAO implements IDAO<Pokemon>{
 			
 			cs.executeUpdate();
 			
-			// Una cez ejecutado recogemo el paraemtro de salida
+			// Una vez ejecutado recogemos el paraemtro de salida
 			
 			resul = pojo;
 			
 			resul.setId(cs.getInt(3));
 			
-			LOG.trace("Pokemon creada -> " + resul);
-
+			if(resul.getId() != -1) {
+				
+				ArrayList<Habilidad> habilidades = (ArrayList<Habilidad>) pojo.getHabilidades();
+				for (Habilidad habilidad : habilidades) {
+					
+					PreparedStatement ps = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
+					
+					ps.setInt(1, pojo.getId());
+					ps.setInt(2, habilidad.getId());
+					
+					ps.executeUpdate();
+					
+				}	
+				
+			}
+			
+			
+			//SI TODO FUNCIONA BIEN			
+			con.commit();
+		} catch (Exception e) {
+			
+			con.rollback();
+			e.printStackTrace();
+			
+			throw new Exception("nombre duplicado");
+			
+		}finally {
+			
+			if ( con != null ) {
+				con.close();
+			}			
+			
 		}
 
-		return resul;	}
+		return null;
+	}
 	
 	private Pokemon mapper(ResultSet rs) throws SQLException {
 		

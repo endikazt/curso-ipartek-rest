@@ -224,7 +224,6 @@ public class PokemonController extends HttpServlet {
 							dao.update(pathInfoData, pokemon);
 							
 							statusCode = HttpServletResponse.SC_CREATED;
-							responseBody = "Pokemon modificado correctamente. \n " + new Gson().toJson(pokemon).toString();	
 							
 							
 						} catch (Exception e) {
