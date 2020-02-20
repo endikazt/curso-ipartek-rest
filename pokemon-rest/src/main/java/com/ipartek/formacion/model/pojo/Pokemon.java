@@ -52,7 +52,7 @@ public class Pokemon {
 
 	@Override
 	public String toString() {
-		return "Pokemon [id=" + id + ", nombre=" + nombre + "]";
+		return "Pokemon [id=" + id + ", nombre=" + nombre + ", imagen=" + imagen + ", habilidades=" + habilidades + "]";
 	}
 
 }

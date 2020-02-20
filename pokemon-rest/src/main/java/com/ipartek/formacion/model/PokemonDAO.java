@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import com.ipartek.formacion.model.pojo.Habilidad;
 import com.ipartek.formacion.model.pojo.Pokemon;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 public class PokemonDAO implements IDAO<Pokemon>{
 	
@@ -196,35 +197,70 @@ public class PokemonDAO implements IDAO<Pokemon>{
 	@Override
 	public Pokemon update(int id, Pokemon pojo) throws Exception {
 		Pokemon resul = null;
+		Pokemon pokeOriginal = this.getById(id);
+		
+		String sqlInsertHabilidad = "INSERT INTO po_ha (id_pokemon,id_habilidad) VALUES (?,?);";
+		String sqlDeleteHabilidad = "DELETE FROM po_ha WHERE id_pokemon=? and id_habilidad=?;";
 		
 		LOG.trace("Modificar pokemon " + id + ". Datos a modificar -> " + pojo);
 		
-		try (
-				
-			Connection con = ConnectionManager.getConnection();
-			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_update(?, ?, ?)}");		
-				
-		) {
+		Connection con = null;
+		try {
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);
+			
+			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_update(?, ?, ?)}");
 			
 			cs.setString(1, pojo.getNombre());
 			cs.setString(2, pojo.getImagen());
 			cs.setInt(3, id);
-
-			int affectedRows = cs.executeUpdate();
-			if (affectedRows == 1) {
+			
+			LOG.debug(cs);
+			
+			cs.executeUpdate();
+			
+			resul = pojo;
 				
-				resul = this.getById(id);
+			ArrayList<Habilidad> habilidades = (ArrayList<Habilidad>) pojo.getHabilidades();
+			for (Habilidad habilidad : habilidades) {
 				
-				LOG.trace("Pokemon " + id + " modificada. Datos del pokemon -> " + resul);
+				PreparedStatement ps = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
 				
-			} else {
+				ps.setInt(1, pojo.getId());
+				ps.setInt(2, habilidad.getId());
 				
-				throw new Exception("No se encontro registro para id=" + id);
+				ps.executeUpdate();
 				
 			}
+			
+			//SI TODO FUNCIONA BIEN			
+			con.commit();
+			
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			
+			con.rollback();
+			e.printStackTrace();
+			
+			throw new MySQLIntegrityConstraintViolationException("nombre duplicado");
+						
 		}
-		
+		catch (Exception e) {
+			
+			con.rollback();
+			e.printStackTrace();
+			
+			throw new Exception("Error de base de datos.");
+				
+		} finally {
+			
+			if ( con != null ) {
+				con.close();
+			}			
+			
+		}
+
 		return resul;
+		
 	}
 
 	@Override
@@ -234,6 +270,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 		String sqlInsertHabilidad = "INSERT INTO po_ha (id_pokemon,id_habilidad) VALUES (?,?);";
 		
 		LOG.trace("Crear nuevo pokemon -> " + pojo);
+		LOG.trace("Crear nuevo pokemon -> " + pojo.getHabilidades());
 		
 		Connection con = null;
 		try {
@@ -278,14 +315,22 @@ public class PokemonDAO implements IDAO<Pokemon>{
 			
 			//SI TODO FUNCIONA BIEN			
 			con.commit();
-		} catch (Exception e) {
+		} catch (MySQLIntegrityConstraintViolationException e) {
 			
 			con.rollback();
 			e.printStackTrace();
 			
-			throw new Exception("nombre duplicado");
+			throw new MySQLIntegrityConstraintViolationException("nombre duplicado");
+						
+		}
+		catch (Exception e) {
 			
-		}finally {
+			con.rollback();
+			e.printStackTrace();
+			
+			throw new Exception("Error de base de datos.");
+				
+		} finally {
 			
 			if ( con != null ) {
 				con.close();

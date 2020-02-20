@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.ipartek.formacion.model.PokemonDAO;
+import com.ipartek.formacion.model.pojo.Mensaje;
 import com.ipartek.formacion.model.pojo.Pokemon;
 import com.ipartek.formacion.utils.Utilidades;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
@@ -38,6 +39,7 @@ public class PokemonController extends HttpServlet {
 	private BufferedReader reader;
 	private String responseBody;
 	private int statusCode;
+	private Mensaje mensaje;
 
 	/**
 	 * @see Servlet#init(ServletConfig)
@@ -45,6 +47,7 @@ public class PokemonController extends HttpServlet {
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 		dao = PokemonDAO.getInstance();
+		mensaje = new Mensaje();
 	}
 
 	/**
@@ -127,7 +130,9 @@ public class PokemonController extends HttpServlet {
 					} else {
 						
 						statusCode = HttpServletResponse.SC_NOT_FOUND;
-						responseBody = "No existe ningun pokemon con el id " + pathInfoData + " :(";
+						mensaje.setTipo(HttpServletResponse.SC_NOT_FOUND);
+						mensaje.setMensaje("No existe ningun pokemon con el id " + pathInfoData + " :(");
+						responseBody = new Gson().toJson(mensaje).toString();
 						
 					}
 				
@@ -138,7 +143,9 @@ public class PokemonController extends HttpServlet {
 			LOG.info(e);
 
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;
-			responseBody = "Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1";
+			mensaje.setTipo(HttpServletResponse.SC_BAD_REQUEST);
+			mensaje.setMensaje("Tienes que enviar el tipo de datos correctos. Ejemplo supermecado-rest/producto/1");
+			responseBody = new Gson().toJson(mensaje).toString();
 		}
 		
 	}
@@ -166,14 +173,18 @@ public class PokemonController extends HttpServlet {
 				LOG.error("No se ha podido insertar el registro en la base de datos. Error -> " + esql);
 				
 				statusCode = HttpServletResponse.SC_CONFLICT;
-				responseBody = "No se ha podido crear el pokemon porque el ID o el Nombre ya existen en la base de datos.";
+				mensaje.setTipo(HttpServletResponse.SC_CONFLICT);
+				mensaje.setMensaje("No se ha podido crear el pokemon porque el nombre ya existe en la base de datos.");
+				responseBody = new Gson().toJson(mensaje).toString();
 				
 				
 			} catch (Exception e) {
 				LOG.error(e);
 				
 				statusCode =  HttpServletResponse.SC_CONFLICT;
-				responseBody = "No se ha podido crear el pokemon por algun error de la base de datos.";
+				mensaje.setTipo(HttpServletResponse.SC_CONFLICT);
+				mensaje.setMensaje("No se ha podido crear el pokemon por algun error de la base de datos.");
+				responseBody = new Gson().toJson(mensaje).toString();
 			}
 			
 			
@@ -181,13 +192,17 @@ public class PokemonController extends HttpServlet {
 			LOG.error(e1);
 
 			statusCode = HttpServletResponse.SC_CONFLICT;
-			responseBody = "El formato de los datos es incorrecto.";
+			mensaje.setTipo(HttpServletResponse.SC_CONFLICT);
+			mensaje.setMensaje("El formato del Pokemon es incorecto.");
+			responseBody = new Gson().toJson(mensaje).toString();
 			
 		} catch (JsonIOException e1) {
 			LOG.error(e1);
 			
 			statusCode = HttpServletResponse.SC_CONFLICT;
-			responseBody = "Tienes que enviar el tipo de datos correctos.";
+			mensaje.setTipo(HttpServletResponse.SC_CONFLICT);
+			mensaje.setMensaje("Tiene que enviar el tipo de datos correcto.");
+			responseBody = new Gson().toJson(mensaje).toString();
 			
 		}
 	}
@@ -230,7 +245,9 @@ public class PokemonController extends HttpServlet {
 							LOG.error(e);
 
 							statusCode = HttpServletResponse.SC_CONFLICT;
-							responseBody = "El formato de los datos es incorrecto.";
+							mensaje.setTipo(HttpServletResponse.SC_CONFLICT);
+							mensaje.setMensaje("Tiene que enviar el tipo de datos correcto.");
+							responseBody = new Gson().toJson(mensaje).toString();
 							
 						}
 							
@@ -238,7 +255,9 @@ public class PokemonController extends HttpServlet {
 						LOG.error(e);
 						
 						statusCode = HttpServletResponse.SC_ACCEPTED;
-						responseBody = "No existe ningun pokemon con ese ID :(";
+						mensaje.setTipo(HttpServletResponse.SC_ACCEPTED);
+						mensaje.setMensaje("No existe ningun pokemon con ese ID :(");
+						responseBody = new Gson().toJson(mensaje).toString();
 					}
 			}
 			
@@ -247,7 +266,9 @@ public class PokemonController extends HttpServlet {
 			LOG.info("El parametro pasado no es un numero. Error -> " + e);
 			
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;
-			responseBody = "Tienes que enviar el tipo de datos correctos.";
+			mensaje.setTipo(HttpServletResponse.SC_BAD_REQUEST);
+			mensaje.setMensaje("Tienes que enviar el tipo de datos correctos.");
+			responseBody = new Gson().toJson(mensaje).toString();
 			
 		}	
 	}
