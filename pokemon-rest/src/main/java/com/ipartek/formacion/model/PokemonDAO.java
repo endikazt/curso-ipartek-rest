@@ -220,18 +220,73 @@ public class PokemonDAO implements IDAO<Pokemon>{
 			cs.executeUpdate();
 			
 			resul = pojo;
+			
+			PreparedStatement psInsert = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
+			PreparedStatement psDelete = con.prepareStatement(sqlDeleteHabilidad);
+			
+			ArrayList<Habilidad> habilidadesViejas = (ArrayList<Habilidad>) pokeOriginal.getHabilidades();
+			ArrayList<Habilidad> habilidadesNuevas = (ArrayList<Habilidad>) pojo.getHabilidades();
+			ArrayList<Habilidad> habilidadesQuitar = new ArrayList<Habilidad>();
+			ArrayList<Habilidad> habilidadesInsertar = new ArrayList<Habilidad>();
+			
+			for (Habilidad habilidadVieja : habilidadesViejas) {
 				
-			ArrayList<Habilidad> habilidades = (ArrayList<Habilidad>) pojo.getHabilidades();
-			for (Habilidad habilidad : habilidades) {
+				boolean encontrado = false;
 				
-				PreparedStatement ps = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
+				for (Habilidad habilidadNueva : habilidadesNuevas) {
+					
+					if(habilidadVieja.getId() == habilidadNueva.getId()) {
+						encontrado = true;
+					}
+					
+				}
 				
-				ps.setInt(1, pojo.getId());
-				ps.setInt(2, habilidad.getId());
+				if(encontrado == false) {
+					
+					habilidadesQuitar.add(habilidadVieja);
+										
+				}
+			
+			}
+			
+			for (Habilidad habilidadNueva : habilidadesNuevas) {
 				
-				ps.executeUpdate();
+				boolean encontrado = false;
+				
+				for (Habilidad habilidadVieja : habilidadesViejas) {
+					
+					if(habilidadVieja.getId() == habilidadNueva.getId()) {
+						encontrado = true;
+					}
+					
+				}
+				
+				if(encontrado == false) {
+					
+					habilidadesInsertar.add(habilidadNueva);
+										
+				}
+			
+			}
+			
+			for(Habilidad habilidadInsertar : habilidadesInsertar) {
+				
+				psInsert.setInt(1, pokeOriginal.getId());
+				psInsert.setInt(2, habilidadInsertar.getId());
+				psInsert.addBatch();
 				
 			}
+			
+			for(Habilidad habilidadEliminar : habilidadesQuitar) {
+				
+				psDelete.setInt(1, pokeOriginal.getId());
+				psDelete.setInt(2, habilidadEliminar.getId());
+				psDelete.addBatch();
+				
+			}
+			
+			psDelete.executeBatch();
+			psInsert.executeBatch();
 			
 			//SI TODO FUNCIONA BIEN			
 			con.commit();
