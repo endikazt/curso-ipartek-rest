@@ -15,6 +15,10 @@
 		<javax.servlet.api>3.0.1</javax.servlet.api>
 		<javax.servlet.jsp.version>2.2</javax.servlet.jsp.version>
 		<javax.servlet.jstl.version>1.2</javax.servlet.jstl.version>
+		<sonar.projectKey>endikazt_curso-ipartek-rest</sonar.projectKey>
+		<sonar.organization>endikazt</sonar.organization>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.login>59d66198a92a8f1a4a675f6e541bbf5e107aceef</sonar.login>
 	</properties>
 
 	<!-- librerias que vamos a usar u otros proyectos maven -->

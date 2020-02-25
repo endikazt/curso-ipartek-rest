@@ -20,7 +20,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 	
 	private static PokemonDAO INSTANCE;
 	
-	private final static Logger LOG = Logger.getLogger(PokemonDAO.class);
+	private static final Logger LOG = Logger.getLogger(PokemonDAO.class);
 	
 	private PokemonDAO() {
 		super();
