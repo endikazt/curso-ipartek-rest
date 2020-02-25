@@ -27,15 +27,15 @@ import com.ipartek.formacion.utils.Utilidades;
 @WebServlet("/api/habilidad/*")
 public class HabilidadController extends HttpServlet {
 	
-	private final static Logger LOG = Logger.getLogger(HabilidadController.class);
+	private static final Logger LOG = Logger.getLogger(HabilidadController.class);
 	
 	private static final long serialVersionUID = 1L;
     private static HabilidadDAO dao;   
-    private String pathInfo;
-    private PrintWriter out;
-	private BufferedReader reader;
-	private String responseBody;
-	private int statusCode;
+    private static String pathInfo;
+    private static PrintWriter out;
+	private static BufferedReader reader;
+	private static String responseBody;
+	private static int statusCode;
 
 	/**
 	 * @see Servlet#init(ServletConfig)

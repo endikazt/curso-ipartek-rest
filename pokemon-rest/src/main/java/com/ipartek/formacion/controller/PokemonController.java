@@ -30,16 +30,16 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 @WebServlet("/api/pokemon/*")
 public class PokemonController extends HttpServlet {
 	
-	private final static Logger LOG = Logger.getLogger(PokemonController.class);
+	private static final Logger LOG = Logger.getLogger(PokemonController.class);
 	
 	private static final long serialVersionUID = 1L;
     private static PokemonDAO dao;   
-    private String pathInfo;
-    private PrintWriter out;
-	private BufferedReader reader;
-	private String responseBody;
-	private int statusCode;
-	private Mensaje mensaje;
+    private static String pathInfo;
+    private static PrintWriter out;
+	private static BufferedReader reader;
+	private static String responseBody;
+	private static int statusCode;
+	private static Mensaje mensaje;
 
 	/**
 	 * @see Servlet#init(ServletConfig)
