@@ -194,6 +194,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 		return resul;
 	}
 
+	@SuppressWarnings("resource")
 	@Override
 	public Pokemon update(int id, Pokemon pojo) throws Exception {
 		Pokemon resul = null;
@@ -205,11 +206,16 @@ public class PokemonDAO implements IDAO<Pokemon>{
 		LOG.trace("Modificar pokemon " + id + ". Datos a modificar -> " + pojo);
 		
 		Connection con = null;
-		try {
-			con = ConnectionManager.getConnection();
-			con.setAutoCommit(false);
-			
+		try (
+				
 			CallableStatement cs = con.prepareCall("{CALL pa_pokemons_update(?, ?, ?)}");
+			PreparedStatement psInsert = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
+			PreparedStatement psDelete = con.prepareStatement(sqlDeleteHabilidad);
+		
+			) {
+			
+			con = ConnectionManager.getConnection();
+			con.setAutoCommit(false);			
 			
 			cs.setString(1, pojo.getNombre());
 			cs.setString(2, pojo.getImagen());
@@ -219,10 +225,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 			
 			cs.executeUpdate();
 			
-			resul = pojo;
-			
-			PreparedStatement psInsert = con.prepareStatement(sqlInsertHabilidad, Statement.RETURN_GENERATED_KEYS);
-			PreparedStatement psDelete = con.prepareStatement(sqlDeleteHabilidad);
+			resul = pojo;			
 			
 			ArrayList<Habilidad> habilidadesViejas = (ArrayList<Habilidad>) pokeOriginal.getHabilidades();
 			ArrayList<Habilidad> habilidadesNuevas = (ArrayList<Habilidad>) pojo.getHabilidades();
@@ -310,7 +313,7 @@ public class PokemonDAO implements IDAO<Pokemon>{
 			
 			if ( con != null ) {
 				con.close();
-			}			
+			}	
 			
 		}
 

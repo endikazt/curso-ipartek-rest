@@ -150,12 +150,16 @@ public class UsuarioDAO {
 	
 			int affectedRows = pst.executeUpdate();
 			if (affectedRows == 1) {
-				ResultSet rs = pst.getGeneratedKeys();
-				if (rs.next()) {
-					pojo.setId(rs.getInt(1));
-				}
 				
-				LOG.trace("Usuario " + pojo + " creado.");
+				try(ResultSet rs = pst.getGeneratedKeys();) {
+					
+					if (rs.next()) {
+						pojo.setId(rs.getInt(1));
+					}
+					
+					LOG.trace("Usuario " + pojo + " creado.");
+					
+				}
 	
 			}
 	
